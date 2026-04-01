@@ -18,7 +18,7 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
   const tapCountRef = useRef(0);
   const pulseTimerRef = useRef(0);
 
-  const LIVE_URL = 'https://slapme.vercel.app';
+  const LIVE_URL = 'https://slapme-beta.vercel.app/';
   const REPO_URL = 'https://github.com/DivyKishor/slapme';
 
   const punchScale = useCallback(() => {

@@ -8,7 +8,7 @@ SLAPME is a fullscreen, viral-style web toy that **listens to your mic** and fir
 
 ## ⚡ Demo
 
-- **Live**: `https://slapme.vercel.app` *(replace with your deployed link)*
+- **Live**: `https://slapme-beta.vercel.app/`
 
 ## 🧠 How it works (fast)
 
