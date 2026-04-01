@@ -3,6 +3,18 @@
  */
 export function IntensityMeter({ level, accentFrom, accentTo }) {
   const pct = Math.round(level * 100);
+  const label =
+    level < 0.12
+      ? 'shy'
+      : level < 0.28
+        ? 'tease'
+        : level < 0.5
+          ? 'mmm'
+          : level < 0.72
+            ? 'harder'
+            : level < 0.9
+              ? 'spicy'
+              : 'feral';
   return (
     <div className="flex w-full max-w-xs flex-col items-center gap-3 sm:max-w-md">
       <div
@@ -27,7 +39,9 @@ export function IntensityMeter({ level, accentFrom, accentTo }) {
           borderColor: `color-mix(in srgb, ${accentFrom} 50%, transparent)`,
         }}
       >
-        <span className="text-xs font-bold tabular-nums text-white/40">{pct}</span>
+        <span className="text-xs font-black uppercase tracking-widest text-white/50">
+          {label}
+        </span>
       </div>
     </div>
   );

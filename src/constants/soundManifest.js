@@ -30,14 +30,5 @@ const sortedKeys = Object.keys(SOUND_MANIFEST).sort((a, b) => {
   return na - nb;
 });
 
-const n = sortedKeys.length;
-const chunk = n > 0 ? Math.ceil(n / 3) : 0;
-
-function orAll(slice) {
-  return slice.length ? slice : sortedKeys;
-}
-
-/** Mode pools: first / middle / last third of numbered clips; tiny libraries fall back to full list */
-export const FUNNY_SOUND_KEYS = chunk ? orAll(sortedKeys.slice(0, chunk)) : sortedKeys;
-export const CHAOS_SOUND_KEYS = chunk ? orAll(sortedKeys.slice(chunk, chunk * 2)) : sortedKeys;
-export const SOFT_SOUND_KEYS = chunk ? orAll(sortedKeys.slice(chunk * 2)) : sortedKeys;
+/** Ordered absolute URLs for all clips */
+export const SOUND_URLS = sortedKeys.map((k) => SOUND_MANIFEST[k]);

@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   PEAK_DECAY,
+  LOUD_RMS_COOLDOWN_MS,
+  LOUD_RMS_THRESHOLD,
   RMS_SMOOTH,
   RMS_THRESHOLD,
   SPIKE_DELTA,
+  STRONG_SPIKE_COOLDOWN_MS,
+  STRONG_SPIKE_DELTA,
   TRIGGER_COOLDOWN_MS,
 } from '../constants/detection';
 
@@ -91,11 +95,16 @@ export function useTapDetector(onTap, mediaStream) {
             setHintTapHarder(false);
           }
 
-          if (
-            rms > RMS_THRESHOLD &&
-            delta > SPIKE_DELTA &&
-            now - lastTriggerRef.current > TRIGGER_COOLDOWN_MS
-          ) {
+          const since = now - lastTriggerRef.current;
+          const isStrong = delta > STRONG_SPIKE_DELTA;
+          const cooldownOk = isStrong
+            ? since > STRONG_SPIKE_COOLDOWN_MS
+            : since > TRIGGER_COOLDOWN_MS;
+
+          const loudOk = rms > LOUD_RMS_THRESHOLD && since > LOUD_RMS_COOLDOWN_MS;
+          const spikeOk = rms > RMS_THRESHOLD && delta > SPIKE_DELTA && cooldownOk;
+
+          if (loudOk || spikeOk) {
             lastTriggerRef.current = now;
             onTapRef.current({ rms, delta });
             if (typeof navigator !== 'undefined' && navigator.vibrate) {

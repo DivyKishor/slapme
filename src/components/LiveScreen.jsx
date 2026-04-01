@@ -1,32 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { preloadSounds, playSoundFromMode } from '../audio/playReactionSound';
-import { MODES, WAITING_PROMPTS } from '../constants/reactions';
-import { SOUND_MANIFEST } from '../constants/soundManifest';
-import { useAmbientDrone } from '../hooks/useAmbientDrone';
+import { playSlap, warmSounds } from '../audio/playReactionSound';
+import { ACCENT_FROM, ACCENT_TO, FLASH_COLOR, WAITING_PROMPTS } from '../constants/reactions';
 import { useTapDetector } from '../hooks/useTapDetector';
 import { randomReaction } from '../utils/randomReaction';
 import { IntensityMeter } from './IntensityMeter';
-import { ShareOverlay } from './ShareOverlay';
-
-const MODE_LIST = [MODES.funny, MODES.chaos, MODES.soft];
 
 export function LiveScreen({ stream, onNeedMicAgain }) {
-  const [mode, setMode] = useState(MODES.funny);
-  const modeRef = useRef(mode);
-  modeRef.current = mode;
-
   const [reaction, setReaction] = useState('Tap your laptop');
   const [waitingPrompt, setWaitingPrompt] = useState(WAITING_PROMPTS[0]);
-  const [hasTriggered, setHasTriggered] = useState(false);
   const [flash, setFlash] = useState(null); // { color, key }
   const [pulseScale, setPulseScale] = useState(1);
-  const [showShare, setShowShare] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareToast, setShareToast] = useState(null); // string
+  const toastTimerRef = useRef(0);
 
   const shareAtRef = useRef(3 + Math.floor(Math.random() * 3)); // 3, 4, or 5
   const tapCountRef = useRef(0);
   const pulseTimerRef = useRef(0);
 
-  const { ambientOn, setAmbientOn } = useAmbientDrone(true);
+  const LIVE_URL = 'https://slapme.vercel.app';
+  const REPO_URL = 'https://github.com/DivyKishor/slapme';
 
   const punchScale = useCallback(() => {
     window.clearTimeout(pulseTimerRef.current);
@@ -35,63 +28,101 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
   }, []);
 
   const onTap = useCallback(() => {
-    const m = modeRef.current;
     setReaction(randomReaction());
     setWaitingPrompt(WAITING_PROMPTS[Math.floor(Math.random() * WAITING_PROMPTS.length)]);
     tapCountRef.current += 1;
     if (tapCountRef.current >= shareAtRef.current) {
-      setShowShare(true);
+      window.clearTimeout(toastTimerRef.current);
+      setShareToast('Do you love it? Share it.');
+      toastTimerRef.current = window.setTimeout(() => setShareToast(null), 1600);
     }
-    setHasTriggered(true);
-    setFlash({ color: m.flash, key: Date.now() });
+    setFlash({ color: FLASH_COLOR, key: Date.now() });
     punchScale();
     window.setTimeout(() => setFlash(null), 170);
 
-    playSoundFromMode(m, m.id === 'soft' ? 1 : 1);
+    playSlap(0.95);
   }, [punchScale]);
 
   const { rmsDisplay, analysisError, hintTapHarder } = useTapDetector(onTap, stream);
 
   useEffect(() => {
-    preloadSounds(Object.keys(SOUND_MANIFEST));
-    return () => window.clearTimeout(pulseTimerRef.current);
+    warmSounds();
+    return () => {
+      window.clearTimeout(pulseTimerRef.current);
+      window.clearTimeout(toastTimerRef.current);
+    };
   }, []);
 
-  const handleShare = useCallback(async () => {
-    const url = window.location.href;
+  const shareNativeOrCopy = useCallback(async () => {
+    const url = LIVE_URL;
+    const text = 'SLAPME — turn your mic into chaos.';
     try {
       if (navigator.share) {
         await navigator.share({
           title: 'Tap your laptop',
-          text: 'This stupid site heard me slap my laptop.',
+          text,
           url,
         });
       } else {
         await navigator.clipboard.writeText(url);
-        setReaction('Link copied 📋');
+        setReaction('Live link copied 📋');
       }
     } catch {
       try {
         await navigator.clipboard.writeText(url);
-        setReaction('Link copied 📋');
+        setReaction('Live link copied 📋');
       } catch {
         setReaction('Share blocked — copy the URL!');
       }
     }
   }, []);
 
-  const handleShareAgain = useCallback(() => {
-    setShowShare(false);
+  const resetRun = useCallback(() => {
     tapCountRef.current = 0;
     shareAtRef.current = 3 + Math.floor(Math.random() * 3);
     setReaction('Tap your laptop');
   }, []);
 
+  const shareLinks = useMemo(() => {
+    const u = encodeURIComponent(LIVE_URL);
+    const t = encodeURIComponent('SLAPME — turn your mic into chaos.');
+    return [
+      { id: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/?text=${t}%20${u}` },
+      { id: 'facebook', label: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+      { id: 'x', label: 'X', href: `https://twitter.com/intent/tweet?text=${t}&url=${u}` },
+      { id: 'reddit', label: 'Reddit', href: `https://www.reddit.com/submit?url=${u}&title=${t}` },
+      // Instagram does not support direct web share intents for arbitrary links.
+      { id: 'instagram', label: 'Instagram', href: `https://www.instagram.com/` },
+    ];
+  }, []);
+
+  const copyLiveLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(LIVE_URL);
+      setReaction('Live link copied 📋');
+      setShareOpen(false);
+    } catch {
+      setReaction('Copy failed — grab the URL');
+      setShareOpen(false);
+    }
+  }, []);
+
+  const copyRepoLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(REPO_URL);
+      setReaction('GitHub link copied 📋');
+      setShareOpen(false);
+    } catch {
+      setReaction('Copy failed — grab the URL');
+      setShareOpen(false);
+    }
+  }, []);
+
   const bgStyle = useMemo(
     () => ({
-      background: `radial-gradient(ellipse 100% 80% at 50% 20%, color-mix(in srgb, ${mode.accentFrom} 22%, transparent), #020004 45%, #050008)`,
+      background: `radial-gradient(ellipse 100% 80% at 50% 20%, color-mix(in srgb, ${ACCENT_FROM} 22%, transparent), #020004 45%, #050008)`,
     }),
-    [mode.accentFrom],
+    [],
   );
 
   return (
@@ -99,6 +130,70 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
       className="relative flex h-full min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-5 py-8"
       style={bgStyle}
     >
+      {/* Top-right share */}      
+      <div className="fixed right-4 top-4 z-50">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              if (navigator.share) {
+                shareNativeOrCopy();
+              } else {
+                setShareOpen((v) => !v);
+              }
+            }}
+            className="rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs font-bold text-white/70 backdrop-blur-md transition hover:text-white"
+            aria-label="Share"
+            title="Share"
+          >
+            Share
+          </button>
+
+          {!navigator.share && shareOpen && (
+            <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-white/10 bg-black/70 p-2 text-left text-sm text-white/80 shadow-2xl backdrop-blur-md">
+              <div className="px-2 pb-1 pt-1 text-xs font-bold text-white/40">Share / Copy</div>
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={copyLiveLink}
+                  className="rounded-xl px-3 py-2 text-left font-semibold hover:bg-white/10"
+                  title={LIVE_URL}
+                >
+                  Copy live link
+                </button>
+                <button
+                  type="button"
+                  onClick={copyRepoLink}
+                  className="rounded-xl px-3 py-2 text-left font-semibold hover:bg-white/10"
+                  title={REPO_URL}
+                >
+                  Copy GitHub repo
+                </button>
+                {shareLinks.map((l) => (
+                  <a
+                    key={l.id}
+                    href={l.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => setShareOpen(false)}
+                    className="rounded-xl px-3 py-2 font-semibold hover:bg-white/10"
+                  >
+                    {l.label}
+                  </a>
+                ))}
+                <button
+                  type="button"
+                  onClick={resetRun}
+                  className="rounded-xl px-3 py-2 text-left font-semibold text-white/60 hover:bg-white/10 hover:text-white"
+                >
+                  Reset streak
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {flash && (
         <div
           key={flash.key}
@@ -137,7 +232,7 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
             </h2>
             <p
               className="mt-3 min-h-[1.5em] text-lg font-bold sm:text-xl"
-              style={{ color: mode.accentTo }}
+              style={{ color: ACCENT_TO }}
             >
               {reaction}
             </p>
@@ -146,58 +241,24 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
             <div className="mt-10 w-full max-w-md">
               <IntensityMeter
                 level={rmsDisplay}
-                accentFrom={mode.accentFrom}
-                accentTo={mode.accentTo}
+                accentFrom={ACCENT_FROM}
+                accentTo={ACCENT_TO}
               />
             </div>
 
             {hintTapHarder && (
               <p className="mt-6 animate-pulse text-sm font-semibold text-amber-200/80">
-                Tap harder — we&apos;re listening 👀
+                Clap/slap near the mic 👂
               </p>
-            )}
-
-            {hasTriggered && (
-              <div className="mt-10 w-full max-w-md opacity-100 transition-opacity duration-300">
-                <div className="flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/30 p-2 backdrop-blur-sm">
-                  {MODE_LIST.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setMode(m)}
-                      className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
-                        mode.id === m.id
-                          ? 'bg-white text-black'
-                          : 'text-white/60 hover:text-white'
-                      }`}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             )}
           </>
         )}
       </div>
 
-      {!analysisError && (
-        <div className="fixed bottom-6 left-0 right-0 z-20 flex justify-center px-4">
-          <button
-            type="button"
-            onClick={() => setAmbientOn((v) => !v)}
-            className="rounded-full border border-white/15 bg-black/40 px-4 py-2 text-xs font-bold text-white/50 backdrop-blur-md transition hover:text-white/80"
-          >
-            {ambientOn ? '🔇 Mood off' : '🔈 Mood'}
-          </button>
+      {shareToast && (
+        <div className="fixed left-1/2 top-16 z-50 -translate-x-1/2 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-bold text-white/80 shadow-xl backdrop-blur-md">
+          {shareToast}
         </div>
-      )}
-
-      {showShare && (
-        <ShareOverlay
-          onAgain={handleShareAgain}
-          onShare={handleShare}
-        />
       )}
     </div>
   );

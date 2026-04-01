@@ -10,3 +10,9 @@ body,
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Viral toy feel: prevent accidental text selection */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}

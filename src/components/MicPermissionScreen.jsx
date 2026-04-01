@@ -1,4 +1,10 @@
 import { useState } from 'react';
+import {
+  primeHtmlAudio,
+  primeRandom,
+  unlockAudio,
+  preloadAllGradually,
+} from '../audio/audioEngine';
 
 const MIC_CONSTRAINTS = {
   audio: {
@@ -10,18 +16,19 @@ const MIC_CONSTRAINTS = {
 
 export function MicPermissionScreen({ onStream }) {
   const [error, setError] = useState(null);
-  const [busy, setBusy] = useState(false);
 
   const enable = async () => {
     setError(null);
-    setBusy(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
+      // Unlock + prime audio inside this click (best chance for instant playback later).
+      await unlockAudio();
+      primeHtmlAudio(14);
+      primeRandom(10);
+      preloadAllGradually({ batchSize: 12, intervalMs: 18 });
       onStream(stream);
     } catch (e) {
       setError(e?.message || 'Microphone access denied');
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -39,11 +46,10 @@ export function MicPermissionScreen({ onStream }) {
         <p className="mt-3 text-lg font-semibold text-white/50">Trust us.</p>
         <button
           type="button"
-          disabled={busy}
           onClick={enable}
           className="mt-10 rounded-full border-2 border-fuchsia-400/60 bg-fuchsia-500/20 px-10 py-3.5 text-lg font-bold text-fuchsia-100 backdrop-blur-sm transition hover:bg-fuchsia-500/30 enabled:active:scale-95 disabled:opacity-50"
         >
-          {busy ? '…' : 'Enable Mic'}
+          Enable Mic
         </button>
         {error && (
           <div className="mt-8 flex max-w-sm flex-col gap-3">
