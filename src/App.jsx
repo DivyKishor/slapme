@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LandingScreen } from './components/LandingScreen';
 import { LiveScreen } from './components/LiveScreen';
 import { MicPermissionScreen } from './components/MicPermissionScreen';
+import { Analytics } from '@vercel/analytics/react';
 
 /**
  * Flow: landing → mic (getUserMedia in click hander) → live Web Audio loop.
@@ -55,6 +56,7 @@ export default function App() {
       {phase === 'live' && micStream && (
         <LiveScreen stream={micStream} onNeedMicAgain={backToMic} />
       )}
+      <Analytics />
     </div>
   );
 }
