@@ -6,7 +6,7 @@ import { randomReaction } from '../utils/randomReaction';
 import { IntensityMeter } from './IntensityMeter';
 
 export function LiveScreen({ stream, onNeedMicAgain }) {
-  const [reaction, setReaction] = useState('Tap your laptop');
+  const [reaction, setReaction] = useState('SlapIt');
   const [waitingPrompt, setWaitingPrompt] = useState(WAITING_PROMPTS[0]);
   const [flash, setFlash] = useState(null); // { color, key }
   const [pulseScale, setPulseScale] = useState(1);
@@ -59,7 +59,7 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'Tap your laptop',
+          title: 'SlapIt',
           text,
           url,
         });
@@ -80,7 +80,7 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
   const resetRun = useCallback(() => {
     tapCountRef.current = 0;
     shareAtRef.current = 3 + Math.floor(Math.random() * 3);
-    setReaction('Tap your laptop');
+    setReaction('SlapIt');
   }, []);
 
   const shareLinks = useMemo(() => {
@@ -228,7 +228,7 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
         ) : (
           <>
             <h2 className="text-3xl font-black leading-tight text-white sm:text-5xl md:text-6xl">
-              Tap your laptop
+              SlapIt
             </h2>
             <p
               className="mt-3 min-h-[1.5em] text-lg font-bold sm:text-xl"

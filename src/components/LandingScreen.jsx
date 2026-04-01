@@ -11,7 +11,7 @@ export function LandingScreen({ onStart }) {
       />
       <div className="relative z-10 flex max-w-lg flex-col items-center text-center">
         <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl md:text-7xl">
-          Tap your laptop.
+          SlapIt
         </h1>
         <p className="mt-4 text-base font-semibold text-white/45 sm:text-lg">
           Turn your sound on 🔊
