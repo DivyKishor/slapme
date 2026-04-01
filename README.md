@@ -8,7 +8,7 @@ SlapIt is a fullscreen, viral-style web toy that listens to your mic and fires i
 
 ## ⚡ Demo
 
-- **Live**: `https://slapme-beta.vercel.app/`
+- **Live**: `https://slap-it.vercel.app/`
 - **Repo**: `https://github.com/DivyKishor/slapme`
 
 ## 🧠 How It Works
