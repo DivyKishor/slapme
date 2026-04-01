@@ -30,6 +30,8 @@ export function useTapDetector(onTap, mediaStream) {
   const smoothedRef = useRef(0);
   const peakRef = useRef(0.01);
   const quietFramesRef = useRef(0);
+  const suppressUntilRef = useRef(0);
+  const armedRef = useRef(true);
 
   const stopLoop = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -39,6 +41,8 @@ export function useTapDetector(onTap, mediaStream) {
       ctxRef.current = null;
     }
     lastRmsRef.current = 0;
+    suppressUntilRef.current = 0;
+    armedRef.current = true;
   }, []);
 
   useEffect(() => {
@@ -104,8 +108,16 @@ export function useTapDetector(onTap, mediaStream) {
           const loudOk = rms > LOUD_RMS_THRESHOLD && since > LOUD_RMS_COOLDOWN_MS;
           const spikeOk = rms > RMS_THRESHOLD && delta > SPIKE_DELTA && cooldownOk;
 
-          if (loudOk || spikeOk) {
+          // Rearm only after signal settles; prevents playback-feedback loops on mobile.
+          if (!armedRef.current && rms < 0.02) {
+            armedRef.current = true;
+          }
+
+          const notSuppressed = now > suppressUntilRef.current;
+          if (armedRef.current && notSuppressed && (loudOk || spikeOk)) {
             lastTriggerRef.current = now;
+            suppressUntilRef.current = now + 240;
+            armedRef.current = false;
             onTapRef.current({ rms, delta });
             if (typeof navigator !== 'undefined' && navigator.vibrate) {
               navigator.vibrate(12);

@@ -8,9 +8,10 @@ import {
 
 const MIC_CONSTRAINTS = {
   audio: {
-    echoCancellation: false,
-    noiseSuppression: false,
-    autoGainControl: false,
+    // Mobile speakers can bleed into mic; these reduce self-trigger loops.
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
   },
 };
 
