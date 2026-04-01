@@ -1,10 +1,10 @@
-# 🔥 SLAPME — Turn Your Mic Into Chaos
+# 🔥 SlapIt — Turn Your Mic Into Chaos
 
-![SLAPME](./cartoon-slap-caricature-white-hand-red-text-graphic-78068638.jpg)
+![SlapIt](./cartoon-slap-caricature-white-hand-red-text-graphic-78068638.jpg)
 
 > “The internet didn’t need this… but now it can’t live without it.”
 
-SLAPME is a fullscreen, viral-style web toy that **listens to your mic** and fires **instant slap/tap reactions** in real time—flash, shake, sounds, and escalating chaos.
+SlapIt is a fullscreen, viral-style web toy that **listens to your mic** and fires **instant slap/tap reactions** in real time—flash, shake, sounds, and escalating chaos.
 
 ## ⚡ Demo
 
@@ -36,7 +36,7 @@ npm run dev
 
 ## 🔐 Permissions & privacy
 
-SLAPME needs **🎤 microphone access**.
+SlapIt needs **🎤 microphone access**.
 
 - **No recording**
 - **No uploads**

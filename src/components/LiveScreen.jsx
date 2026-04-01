@@ -55,7 +55,7 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
 
   const shareNativeOrCopy = useCallback(async () => {
     const url = LIVE_URL;
-    const text = 'SLAPME — turn your mic into chaos.';
+    const text = 'SlapIt — turn your mic into chaos.';
     try {
       if (navigator.share) {
         await navigator.share({
@@ -85,7 +85,7 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
 
   const shareLinks = useMemo(() => {
     const u = encodeURIComponent(LIVE_URL);
-    const t = encodeURIComponent('SLAPME — turn your mic into chaos.');
+    const t = encodeURIComponent('SlapIt — turn your mic into chaos.');
     return [
       { id: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/?text=${t}%20${u}` },
       { id: 'facebook', label: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
