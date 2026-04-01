@@ -1,0 +1,67 @@
+<button onclick="start()">Start</button>
+
+<script>
+/** public/audio/1.mp3 … 59.mp3 (Vite serves public/ at /audio/ over HTTP) */
+const TAP_FILES = Array.from({ length: 59 }, (_, i) => `${i + 1}.mp3`);
+
+function tapSoundBaseUrl() {
+  // file://…/test.html → …/public/audio/ (leading / would hit disk root)
+  if (location.protocol === 'file:') {
+    return new URL('public/audio/', location.href);
+  }
+  return new URL('/audio/', location.origin);
+}
+
+function playRandomTapSound() {
+  const name = TAP_FILES[Math.floor(Math.random() * TAP_FILES.length)];
+  const url = new URL(name, tapSoundBaseUrl()).href;
+  new Audio(url).play();
+}
+
+let lastVolume = 0;
+let lastTrigger = 0;
+
+const THRESHOLD = 0.05;
+const SPIKE = 0.03;
+const COOLDOWN = 500;
+
+async function start() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const audioContext = new AudioContext();
+  const source = audioContext.createMediaStreamSource(stream);
+
+  const analyser = audioContext.createAnalyser();
+  analyser.fftSize = 2048;
+
+  source.connect(analyser);
+
+  const data = new Uint8Array(analyser.fftSize);
+
+  function detect() {
+    analyser.getByteTimeDomainData(data);
+
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) {
+      let val = (data[i] - 128) / 128;
+      sum += val * val;
+    }
+
+    let rms = Math.sqrt(sum / data.length);
+    let delta = rms - lastVolume;
+
+    const now = Date.now();
+
+    if (rms > THRESHOLD && delta > SPIKE && now - lastTrigger > COOLDOWN) {
+      lastTrigger = now;
+      console.log("💥 TAP DETECTED");
+
+      playRandomTapSound();
+    }
+
+    lastVolume = rms;
+    requestAnimationFrame(detect);
+  }
+
+  detect();
+}
+</script>
