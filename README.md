@@ -4,28 +4,33 @@
 
 > “The internet didn’t need this… but now it can’t live without it.”
 
-SlapIt is a fullscreen, viral-style web toy that **listens to your mic** and fires **instant slap/tap reactions** in real time—flash, shake, sounds, and escalating chaos.
+SlapIt is a fullscreen, viral-style web toy that listens to your mic and fires instant slap/clap reactions in real time: flash, punch, text, and audio chaos.
 
 ## ⚡ Demo
 
 - **Live**: `https://slapme-beta.vercel.app/`
+- **Repo**: `https://github.com/DivyKishor/slapme`
 
-## 🧠 How it works (fast)
+## 🧠 How It Works
 
-- **Mic in** → Web Audio API analyser
-- **RMS + spike detection** → “tap/slap” trigger
-- **Reaction loop** → flash + scale punch + random text + randomized sound (with cooldown)
-- **Modes + share hook** → built for “record this” energy
+- Microphone stream goes into a Web Audio analyser
+- RMS + spike + loudness checks detect clap/slap transients
+- Each trigger runs a reaction loop: flash + scale + random reaction text + sound
+- Sounds are unlocked and preloaded early for near-instant playback
+- Mobile anti-feedback guard prevents continuous self-trigger loops
 
-## 🕹️ Features
+## 🕹️ Current Features
 
-- **Real-time mic detection** (RMS meter + spike triggers)
-- **Funny / Chaos / Soft** modes (unlocks after your first hit)
-- **Low-latency** feedback loop + anti-spam cooldown
-- **Share moment** after **3–5** taps (“You broke it 💀”)
-- **Runs 100% in-browser** (no backend)
+- Real-time clap/slap detection tuned for quick retriggers
+- Instant-feel audio engine using pre-decoded buffers from `audio/sexy/`
+- Fullscreen immersive UI with live intensity meter
+- Top-right Share button with:
+  - native share (when supported)
+  - direct links for WhatsApp / Facebook / X / Reddit
+  - one-tap copy for live URL and GitHub URL
+- No backend required; runs fully in the browser
 
-## 🚀 Getting started
+## 🚀 Getting Started
 
 ```bash
 git clone https://github.com/DivyKishor/slapme.git
@@ -34,38 +39,35 @@ npm install
 npm run dev
 ```
 
-## 🔐 Permissions & privacy
+## 📦 Build
 
-SlapIt needs **🎤 microphone access**.
+```bash
+npm run build
+npm run preview
+```
 
-- **No recording**
-- **No uploads**
-- **Everything stays local in your browser**
+## 🔐 Permissions & Privacy
 
-## 🧪 Tech stack
+SlapIt needs microphone access.
 
-- **React + Vite**
-- **TailwindCSS**
-- **Web Audio API**
+- No recording
+- No uploads
+- Everything is processed locally in your browser
 
-## 💡 Inspiration
+## 🧪 Tech Stack
 
-- slapmac.com
-- chaotic meme culture
-- “why does this exist?” energy
+- React + Vite
+- TailwindCSS
+- Web Audio API
 
 ## 🤝 Contributing
 
-PRs welcome—especially:
-- more sound packs
-- wilder modes
+PRs are welcome for:
+
+- new sound packs
 - better detection tuning
+- more chaotic reactions
 
 ## ⚠️ Disclaimer
 
 Not serious. Not scientific. **Pure chaos.**
-
-## ⭐ Show some love
-
-If this made you laugh (or question reality), drop a ⭐
-

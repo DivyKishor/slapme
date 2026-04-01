@@ -5,6 +5,12 @@ import { useTapDetector } from '../hooks/useTapDetector';
 import { randomReaction } from '../utils/randomReaction';
 import { IntensityMeter } from './IntensityMeter';
 
+function getChaosPersonality(slaps) {
+  if (slaps >= 12) return { emoji: '🔥', label: 'Aggressive Slapper' };
+  if (slaps >= 6) return { emoji: '💀', label: 'Unstable Reactor' };
+  return { emoji: '🧊', label: 'Silent Assassin' };
+}
+
 export function LiveScreen({ stream, onNeedMicAgain }) {
   const [reaction, setReaction] = useState('SlapIt');
   const [waitingPrompt, setWaitingPrompt] = useState(WAITING_PROMPTS[0]);
@@ -12,6 +18,10 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
   const [pulseScale, setPulseScale] = useState(1);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareToast, setShareToast] = useState(null); // string
+  const [shareProfile, setShareProfile] = useState(() => ({
+    slaps: 0,
+    personality: getChaosPersonality(0),
+  }));
   const toastTimerRef = useRef(0);
 
   const shareAtRef = useRef(3 + Math.floor(Math.random() * 3)); // 3, 4, or 5
@@ -31,6 +41,10 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
     setReaction(randomReaction());
     setWaitingPrompt(WAITING_PROMPTS[Math.floor(Math.random() * WAITING_PROMPTS.length)]);
     tapCountRef.current += 1;
+    setShareProfile({
+      slaps: tapCountRef.current,
+      personality: getChaosPersonality(tapCountRef.current),
+    });
     if (tapCountRef.current >= shareAtRef.current) {
       window.clearTimeout(toastTimerRef.current);
       setShareToast('Do you love it? Share it.');
@@ -55,37 +69,47 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
 
   const shareNativeOrCopy = useCallback(async () => {
     const url = LIVE_URL;
-    const text = 'SlapIt — turn your mic into chaos.';
+    const slaps = Math.max(1, shareProfile.slaps);
+    const p = shareProfile.personality;
+    const text = `I survived ${slaps} slaps. Beat me.\n\nYou are:\n${p.emoji} ${p.label}`;
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'SlapIt',
+          title: `SlapIt — ${slaps} slaps`,
           text,
           url,
         });
       } else {
-        await navigator.clipboard.writeText(url);
-        setReaction('Live link copied 📋');
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        setReaction('Challenge copied 📋');
       }
     } catch {
       try {
-        await navigator.clipboard.writeText(url);
-        setReaction('Live link copied 📋');
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        setReaction('Challenge copied 📋');
       } catch {
         setReaction('Share blocked — copy the URL!');
       }
     }
-  }, []);
+  }, [shareProfile]);
 
   const resetRun = useCallback(() => {
     tapCountRef.current = 0;
     shareAtRef.current = 3 + Math.floor(Math.random() * 3);
     setReaction('SlapIt');
+    setShareProfile({
+      slaps: 0,
+      personality: getChaosPersonality(0),
+    });
   }, []);
 
   const shareLinks = useMemo(() => {
     const u = encodeURIComponent(LIVE_URL);
-    const t = encodeURIComponent('SlapIt — turn your mic into chaos.');
+    const slaps = Math.max(1, shareProfile.slaps);
+    const p = shareProfile.personality;
+    const t = encodeURIComponent(
+      `I survived ${slaps} slaps. Beat me.\n\nYou are:\n${p.emoji} ${p.label}`,
+    );
     return [
       { id: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/?text=${t}%20${u}` },
       { id: 'facebook', label: 'Facebook', href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
@@ -94,7 +118,7 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
       // Instagram does not support direct web share intents for arbitrary links.
       { id: 'instagram', label: 'Instagram', href: `https://www.instagram.com/` },
     ];
-  }, []);
+  }, [shareProfile]);
 
   const copyLiveLink = useCallback(async () => {
     try {
@@ -132,66 +156,15 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
     >
       {/* Top-right share */}      
       <div className="fixed right-4 top-4 z-50">
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => {
-              if (navigator.share) {
-                shareNativeOrCopy();
-              } else {
-                setShareOpen((v) => !v);
-              }
-            }}
-            className="rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs font-bold text-white/70 backdrop-blur-md transition hover:text-white"
-            aria-label="Share"
-            title="Share"
-          >
-            Share
-          </button>
-
-          {!navigator.share && shareOpen && (
-            <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-white/10 bg-black/70 p-2 text-left text-sm text-white/80 shadow-2xl backdrop-blur-md">
-              <div className="px-2 pb-1 pt-1 text-xs font-bold text-white/40">Share / Copy</div>
-              <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  onClick={copyLiveLink}
-                  className="rounded-xl px-3 py-2 text-left font-semibold hover:bg-white/10"
-                  title={LIVE_URL}
-                >
-                  Copy live link
-                </button>
-                <button
-                  type="button"
-                  onClick={copyRepoLink}
-                  className="rounded-xl px-3 py-2 text-left font-semibold hover:bg-white/10"
-                  title={REPO_URL}
-                >
-                  Copy GitHub repo
-                </button>
-                {shareLinks.map((l) => (
-                  <a
-                    key={l.id}
-                    href={l.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => setShareOpen(false)}
-                    className="rounded-xl px-3 py-2 font-semibold hover:bg-white/10"
-                  >
-                    {l.label}
-                  </a>
-                ))}
-                <button
-                  type="button"
-                  onClick={resetRun}
-                  className="rounded-xl px-3 py-2 text-left font-semibold text-white/60 hover:bg-white/10 hover:text-white"
-                >
-                  Reset streak
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setShareOpen(true)}
+          className="rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs font-bold text-white/70 backdrop-blur-md transition hover:text-white"
+          aria-label="Pass the Chaos"
+          title="Pass the Chaos"
+        >
+          Pass the Chaos
+        </button>
       </div>
 
       {flash && (
@@ -258,6 +231,94 @@ export function LiveScreen({ stream, onNeedMicAgain }) {
       {shareToast && (
         <div className="fixed left-1/2 top-16 z-50 -translate-x-1/2 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-bold text-white/80 shadow-xl backdrop-blur-md">
           {shareToast}
+        </div>
+      )}
+
+      {shareOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0a0612]/95 p-4 shadow-2xl">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-black text-white">Do you love it? Share</p>
+              <button
+                type="button"
+                onClick={() => setShareOpen(false)}
+                className="rounded-lg px-2 py-1 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mb-3 space-y-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+              <div>
+                <p className="text-[11px] font-black tracking-wide text-white/45">
+                  PASS THE CHAOS
+                </p>
+                <p className="mt-1 text-xs font-semibold leading-tight text-white/90">
+                  &ldquo;I survived {Math.max(1, shareProfile.slaps)} slaps. Beat me.&rdquo;
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-black tracking-wide text-white/45">
+                  CHAOS PERSONALITY TYPES
+                </p>
+                <p className="mt-1 text-xs font-bold text-fuchsia-200/95">
+                  You are: {shareProfile.personality.emoji} {shareProfile.personality.label}
+                </p>
+                <p className="mt-1 text-[11px] leading-tight text-white/55">
+                  🔥 Aggressive Slapper • 💀 Unstable Reactor • 🧊 Silent Assassin
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <button
+                type="button"
+                onClick={copyLiveLink}
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left font-semibold text-white/90 hover:bg-white/10"
+                title={LIVE_URL}
+              >
+                Copy Live Link
+              </button>
+              <button
+                type="button"
+                onClick={copyRepoLink}
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left font-semibold text-white/90 hover:bg-white/10"
+                title={REPO_URL}
+              >
+                Copy GitHub
+              </button>
+              {typeof navigator !== 'undefined' && navigator.share && (
+                <button
+                  type="button"
+                  onClick={shareNativeOrCopy}
+                  className="col-span-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/15 px-3 py-2 text-left font-bold text-fuchsia-100 hover:bg-fuchsia-500/25"
+                >
+                  Open Native Share
+                </button>
+              )}
+              {shareLinks.map((l) => (
+                <a
+                  key={l.id}
+                  href={l.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setShareOpen(false)}
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-semibold text-white/85 hover:bg-white/10"
+                >
+                  {l.label}
+                </a>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  resetRun();
+                  setShareOpen(false);
+                }}
+                className="col-span-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left font-semibold text-white/65 hover:bg-white/10 hover:text-white"
+              >
+                Reset streak
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
